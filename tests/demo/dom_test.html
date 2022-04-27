@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+
+    <svg>
+        <a>
+            <animate attributeName=href values=javascript:alert(1) />
+            <text x=20 y=20>Click%20me</text>
+        </a>
+    </svg>
+
+    <script>
+        var a;
+        a += "1";
+        var b = decodeURI(location.hash.split("#")[1]);
+
+        document.write("Hello2 " + b + "!");
+
+        typeof name;
+        typeof "123";
+        typeof ("123");
+        if (typeof "123" === "string") {
+            console.log("123")
+        }
+        if (typeof a === "string") {
+            console.log("bbbbb");
+        }
+        var bb = new String("123123");
+        console.log(bb);
+
+        function hello() {
+            typeof name;
+            typeof "123";
+            typeof ("123");
+        }
+
+        const sum = new Function('a', 'b', 'return a + b');
+    </script>
+</body>
+
+</html>

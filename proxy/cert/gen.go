@@ -7,11 +7,12 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"fmt"
 	"math/big"
 	"time"
 )
 
-func GenCA() ([]byte, []byte, error) {
+func GenCA(identifier string) ([]byte, []byte, error) {
 	// serialNumber 是 CA 颁布的唯一序列号
 	serialNumber, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
 	if err != nil {
@@ -21,10 +22,10 @@ func GenCA() ([]byte, []byte, error) {
 	tmpl := &x509.Certificate{
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
-			CommonName:         "XSSFinder CA",
-			Country:            []string{"XSSFinder"},
-			Organization:       []string{"XSSFinder"},
-			OrganizationalUnit: []string{"xssfinder"},
+			CommonName:         fmt.Sprintf("%s CA", identifier),
+			Country:            []string{identifier},
+			Organization:       []string{identifier},
+			OrganizationalUnit: []string{identifier},
 		},
 		NotBefore:             time.Now().AddDate(0, -1, 0),
 		NotAfter:              time.Now().AddDate(99, 0, 0),
@@ -33,7 +34,7 @@ func GenCA() ([]byte, []byte, error) {
 		MaxPathLen:            2,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
 		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageCRLSign,
-		EmailAddresses:        []string{"admin@xssfinder.org"},
+		EmailAddresses:        []string{fmt.Sprintf("x@%s.ca", identifier)},
 	}
 
 	pk, err := rsa.GenerateKey(rand.Reader, 2048)

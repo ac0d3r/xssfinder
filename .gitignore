@@ -17,4 +17,4 @@
 .vscode/
 .DS_Store
 BypassHeadlessDetect.png
-tests/
+chrome/xss/dom/intercepted_test.go

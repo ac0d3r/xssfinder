@@ -4,7 +4,7 @@ import (
 	"io"
 
 	"github.com/Buzz2d0/xssfinder/parser/javascript"
-	"github.com/gokitx/pkgs/slices"
+	"github.com/gokitx/pkgs/slicex"
 	"golang.org/x/net/html"
 )
 
@@ -47,5 +47,5 @@ func GetParams(r io.Reader) ([]string, error) {
 
 	f(doc)
 
-	return slices.RevemoRepByMap(params), nil
+	return slicex.RevemoRepByMap(params), nil
 }

@@ -6,7 +6,7 @@ import (
 )
 
 func TestGenCA(t *testing.T) {
-	cert, key, err := GenCA()
+	cert, key, err := GenCA("xssfinder")
 	if err != nil {
 		t.Fatal(err)
 	}

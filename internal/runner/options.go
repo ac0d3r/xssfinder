@@ -1,46 +1,90 @@
 package runner
 
+import (
+	"github.com/Buzz2d0/xssfinder/chrome/browser"
+	"github.com/Buzz2d0/xssfinder/logger"
+	"github.com/Buzz2d0/xssfinder/proxy"
+	"github.com/sirupsen/logrus"
+)
+
 type Options struct {
-	LogVerbose bool
-	Mitm       struct {
-		Addr        string
-		Verbose     bool     // porxy 代理日志
-		TargetHosts []string // 指定目标主机，将忽略其他主机；默认为所有
-		ParentProxy string   // 请求的代理
+	Debug       bool
+	VeryVerbose bool
+	Mitm        proxy.Config
+	Log         logger.Config
+	Browser     browser.Config
+}
+
+func (o *Options) LogLevel() logrus.Level {
+	l := logrus.InfoLevel
+	if o.Debug {
+		l = logrus.DebugLevel
 	}
-	Chrome struct {
-		HeadLess  bool
-		UserAgent string
-		Proxy     string
+	if o.VeryVerbose {
+		l = logrus.TraceLevel
+	}
+	return l
+}
+
+func NewOptions() *Options {
+	return &Options{
+		Mitm: proxy.Config{
+			Addr: ":8080",
+		},
+		Log: logger.Config{
+			Level: logrus.InfoLevel,
+		},
 	}
 }
 
-type Option func(Options)
-
-func NewOptions() Options {
-	return Options{}
-}
-
-func WithLogVerbose(verbose bool) Option {
-	return func(opt Options) {
-		opt.LogVerbose = verbose
+func (o *Options) Set(opts ...Option) {
+	for i := range opts {
+		opts[i](o)
 	}
 }
 
+type Option func(*Options)
+
+func WithDebug(debug bool) Option {
+	return func(opt *Options) {
+		opt.Debug = debug
+	}
+}
+
+func WithVeryVerbose(vverbose bool) Option {
+	return func(opt *Options) {
+		opt.VeryVerbose = vverbose
+	}
+}
+
+// log
+func WithLogOutJson(o bool) Option {
+	return func(opt *Options) {
+		opt.Log.OutJson = o
+	}
+}
+
+func WithLogNoColor(n bool) Option {
+	return func(opt *Options) {
+		opt.Log.NoColor = n
+	}
+}
+
+// mitm
 func WithMitmAddr(addr string) Option {
-	return func(opt Options) {
+	return func(opt *Options) {
 		opt.Mitm.Addr = addr
 	}
 }
 
-func WithMitmParentProxy(p string) Option {
-	return func(opt Options) {
-		opt.Mitm.ParentProxy = p
+func WithMitmVerbose(verbose bool) Option {
+	return func(opt *Options) {
+		opt.Mitm.Verbose = verbose
 	}
 }
 
 func WithMitmTargetHosts(hosts ...string) Option {
-	return func(opt Options) {
+	return func(opt *Options) {
 		if opt.Mitm.TargetHosts == nil {
 			opt.Mitm.TargetHosts = make([]string, 0)
 		}
@@ -48,20 +92,33 @@ func WithMitmTargetHosts(hosts ...string) Option {
 	}
 }
 
-func WithChromeHeadLess(headless bool) Option {
-	return func(opt Options) {
-		opt.Chrome.HeadLess = headless
+func WithMitmParentProxy(p string) Option {
+	return func(opt *Options) {
+		opt.Mitm.ParentProxy = p
 	}
 }
 
-func WithChromeProxy(proxy string) Option {
-	return func(opt Options) {
-		opt.Chrome.Proxy = proxy
+// browser
+func WithBrowserExecPath(p string) Option {
+	return func(opt *Options) {
+		opt.Browser.ExecPath = p
 	}
 }
 
-func WithChromeUserAgent(useragent string) Option {
-	return func(opt Options) {
-		opt.Chrome.UserAgent = useragent
+func WithBrowserNoHeadless(n bool) Option {
+	return func(opt *Options) {
+		opt.Browser.NoHeadless = n
+	}
+}
+
+func WithBrowserIncognito(i bool) Option {
+	return func(opt *Options) {
+		opt.Browser.Incognito = i
+	}
+}
+
+func WithBrowserProxy(p string) Option {
+	return func(opt *Options) {
+		opt.Browser.Proxy = p
 	}
 }
