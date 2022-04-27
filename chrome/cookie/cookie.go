@@ -29,14 +29,17 @@ func SetOne(name, value,
 func SetWithHttpCookie(c []*http.Cookie) chromedp.Action {
 	cookies := make([]*network.CookieParam, len(c))
 	for i := range c {
-		cookies[i].Name = c[i].Name
-		cookies[i].Value = c[i].Value
-		cookies[i].Domain = c[i].Domain
-		cookies[i].Path = c[i].Path
-		cookies[i].HTTPOnly = c[i].HttpOnly
-		cookies[i].Secure = c[i].Secure
+
 		expr := cdp.TimeSinceEpoch(c[i].Expires)
-		cookies[i].Expires = &expr
+		cookies[i] = &network.CookieParam{
+			Name:     c[i].Name,
+			Value:    c[i].Value,
+			Domain:   c[i].Domain,
+			Path:     c[i].Path,
+			HTTPOnly: c[i].HttpOnly,
+			Secure:   c[i].Secure,
+			Expires:  &expr,
+		}
 	}
 	return chromedp.ActionFunc(func(ctx context.Context) error {
 		return network.SetCookies(cookies).Do(ctx)

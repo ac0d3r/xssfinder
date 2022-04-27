@@ -85,8 +85,6 @@ func (m *MitmServer) SetParentProxy(parentProxy string) {
 }
 
 func (m *MitmServer) OnRequest(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *http.Response) {
-	logrus.Debugln("[mitm]OnRequest ", ctx.Session, req.URL.String())
-
 	// ignore requests for static resources
 	if ignoreRequest(req.URL.Path) {
 		return req, nil
@@ -97,13 +95,17 @@ func (m *MitmServer) OnRequest(req *http.Request, ctx *goproxy.ProxyCtx) (*http.
 
 func (m *MitmServer) MakeOnResponse(c chan Request) func(resp *http.Response, ctx *goproxy.ProxyCtx) *http.Response {
 	return func(resp *http.Response, ctx *goproxy.ProxyCtx) *http.Response {
-		logrus.Debugln("[mitm]OnResponse ", ctx.Session, resp)
+		if resp == nil {
+			m.reqs.Delete(ctx.Session)
+			return resp
+		}
 
 		contentType := resp.Header.Get("Content-Type")
 		if strings.Contains(contentType, "text/html") ||
 			strings.Contains(contentType, "text/htm") {
 			if req, ok := m.reqs.LoadAndDelete(ctx.Session); ok {
 				if request, ok := req.(Request); ok {
+					logrus.Debugln("[mitm] received:", request.URL)
 					request.Response = MakeResponse(resp)
 					c <- request
 				}

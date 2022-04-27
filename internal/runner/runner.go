@@ -50,8 +50,6 @@ func (r *Runner) Shutdown(ctx context.Context) error {
 	defer cancel()
 
 	err := r.mitmServer.Shutdown(ctx)
-
-	logrus.Debug(r.worker.Count())
 	r.worker.Wait()
 	return err
 }
@@ -89,7 +87,7 @@ func (w *ScanWorker) Run(ctx context.Context, C <-chan proxy.Request) error {
 			w.Allow()
 			go func(ctx context.Context, req proxy.Request) {
 				defer w.Done()
-				logrus.Debugln("[ScanWorker] task:", req.URL, req.Response.Status)
+				logrus.Debugln("[ScanWorker] received task:", req.URL, req.Response.Status)
 				if err := w.scan(ctx, req); err != nil {
 					logrus.Errorln("[ScanWorker] scan", err)
 				}

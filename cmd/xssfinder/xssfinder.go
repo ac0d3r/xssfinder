@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"os"
 	"os/signal"
 	"strings"
@@ -15,7 +16,7 @@ import (
 var (
 	fdebug             = flag.Bool("debug", false, "Set debug mode")
 	fvverbose          = flag.Bool("vv", false, "Set very-verbose mode")
-	fmitmAddr          = flag.String("maddr", ":8080", "Set mitm-server listen address")
+	fmitmAddr          = flag.String("maddr", ":8222", "Set mitm-server listen address")
 	fmitmVerbose       = flag.Bool("mverbose", false, "Set mitm-server verbose mode")
 	fmitmTargetHosts   = flag.String("mhosts", "", "Set mitm-server target hosts .e.g. foo.com,bar.io")
 	fmitmParentProxy   = flag.String("mporxy", "", "Set mitm-server parent proxy")
@@ -28,6 +29,7 @@ var (
 )
 
 func main() {
+	banner()
 	flag.Parse()
 
 	opt := runner.NewOptions()
@@ -75,4 +77,18 @@ func parseMultiHosts(s string) []string {
 		r = append(r, strings.TrimSpace(v))
 	}
 	return r
+}
+
+const (
+	banners = `
+    ▄    ▄▄▄▄▄    ▄▄▄▄▄   ▄████  ▄█    ▄   ██▄   ▄███▄   █▄▄▄▄ 
+▀▄   █  █     ▀▄ █     ▀▄ █▀   ▀ ██     █  █  █  █▀   ▀  █  ▄▀ 
+  █ ▀ ▄  ▀▀▀▀▄ ▄  ▀▀▀▀▄   █▀▀    ██ ██   █ █   █ ██▄▄    █▀▀▌  
+ ▄ █   ▀▄▄▄▄▀   ▀▄▄▄▄▀    █      ▐█ █ █  █ █  █  █▄   ▄▀ █  █  
+█   ▀▄                     █      ▐ █  █ █ ███▀  ▀███▀     █   
+ ▀                          ▀       █   ██                ▀`
+)
+
+func banner() {
+	fmt.Println(banners)
 }
