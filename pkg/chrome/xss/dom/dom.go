@@ -29,7 +29,7 @@ var (
 	preloadJS string
 )
 
-func DomBased(url string, vuls *[]VulPoint, timeout time.Duration, before ...chromedp.Action) chromedp.Tasks {
+func GenTasks(url string, vuls *[]VulPoint, timeout time.Duration, before ...chromedp.Action) chromedp.Tasks {
 	return chromedp.Tasks{
 		runtime.Enable(),
 		network.Enable(),
@@ -62,7 +62,7 @@ func DomBased(url string, vuls *[]VulPoint, timeout time.Duration, before ...chr
 			chromedp.ListenTarget(lctx, func(ev interface{}) {
 				switch e := ev.(type) {
 				case *fetch.EventRequestPaused:
-					logrus.Debugf("[DomBased] EventRequestPaused: %s %d\n", e.Request.URL, e.ResponseStatusCode)
+					logrus.Debugf("[dom-based] EventRequestPaused: %s %d\n", e.Request.URL, e.ResponseStatusCode)
 					if e.ResponseStatusCode == 0 {
 						return
 					}
@@ -70,17 +70,17 @@ func DomBased(url string, vuls *[]VulPoint, timeout time.Duration, before ...chr
 					go func() { // convert javascript
 						defer wg.Done()
 						if err := parseDomHooktResponseJs(lctx, e); err != nil {
-							logrus.Errorf("[DomBased] EventRequestPaused %s error: %s\n", e.Request.URL, err)
+							logrus.Errorf("[dom-based] hook %s error: %s\n", e.Request.URL, err)
 						}
 					}()
 				case *runtime.EventBindingCalled:
 					switch e.Name {
 					case eventPushVul:
-						logrus.Traceln("[DomBased] EventBindingCalled", e.Payload)
+						logrus.Traceln("[dom-based] EventBindingCalled", e.Payload)
 
 						points := make([]VulPoint, 0)
 						if err := json.Unmarshal([]byte(e.Payload), &points); err != nil {
-							logrus.Errorln("[DomBased] json.Unmarshal", err)
+							logrus.Errorln("[dom-based] json.Unmarshal error:", err)
 							return
 						}
 						mux.Lock()
@@ -88,7 +88,7 @@ func DomBased(url string, vuls *[]VulPoint, timeout time.Duration, before ...chr
 						mux.Unlock()
 					}
 				case *page.EventLoadEventFired:
-					logrus.Traceln("[DomBased] EventLoadEventFired")
+					logrus.Traceln("[dom-based] EventLoadEventFired")
 					once.Do(func() { close(fired) })
 				}
 			})
@@ -142,7 +142,7 @@ func parseDomHooktResponseJs(ctx context.Context, event *fetch.EventRequestPause
 		for i := range ss {
 			convedBody, err := HookParse(bytesconv.BytesToString(ss[i][1]))
 			if err != nil {
-				fmt.Printf("[HookConv] %s error: %s\n", event.Request.URL, err)
+				logrus.Errorf("[dom-based] hookconv %s error: %s\n", event.Request.URL, err)
 				continue
 			}
 			resBody = bytes.Replace(resBody, ss[i][1], bytesconv.StringToBytes(convedBody), 1)

@@ -1,18 +1,19 @@
-package runner
+package options
 
 import (
-	"github.com/Buzz2d0/xssfinder/chrome/browser"
-	"github.com/Buzz2d0/xssfinder/logger"
-	"github.com/Buzz2d0/xssfinder/proxy"
+	"github.com/Buzz2d0/xssfinder/internal/logger"
+	"github.com/Buzz2d0/xssfinder/pkg/chrome/browser"
+	"github.com/Buzz2d0/xssfinder/pkg/proxy"
 	"github.com/sirupsen/logrus"
 )
 
 type Options struct {
-	Debug       bool
-	VeryVerbose bool
-	Mitm        proxy.Config
-	Log         logger.Config
-	Browser     browser.Config
+	Debug        bool
+	Verbose      bool
+	NotifierYaml string
+	Mitm         proxy.Config
+	Log          logger.Config
+	Browser      browser.Config
 }
 
 func (o *Options) LogLevel() logrus.Level {
@@ -20,16 +21,16 @@ func (o *Options) LogLevel() logrus.Level {
 	if o.Debug {
 		l = logrus.DebugLevel
 	}
-	if o.VeryVerbose {
+	if o.Verbose {
 		l = logrus.TraceLevel
 	}
 	return l
 }
 
-func NewOptions() *Options {
+func New() *Options {
 	return &Options{
 		Mitm: proxy.Config{
-			Addr: ":8080",
+			Addr: "127.0.0.1:8222",
 		},
 		Log: logger.Config{
 			Level: logrus.InfoLevel,
@@ -37,10 +38,11 @@ func NewOptions() *Options {
 	}
 }
 
-func (o *Options) Set(opts ...Option) {
+func (o *Options) Set(opts ...Option) *Options {
 	for i := range opts {
 		opts[i](o)
 	}
+	return o
 }
 
 type Option func(*Options)
@@ -51,9 +53,15 @@ func WithDebug(debug bool) Option {
 	}
 }
 
-func WithVeryVerbose(vverbose bool) Option {
+func WithVeryVerbose(verbose bool) Option {
 	return func(opt *Options) {
-		opt.VeryVerbose = vverbose
+		opt.Verbose = verbose
+	}
+}
+
+func WithNotifierYaml(f string) Option {
+	return func(opt *Options) {
+		opt.NotifierYaml = f
 	}
 }
 
@@ -61,12 +69,6 @@ func WithVeryVerbose(vverbose bool) Option {
 func WithLogOutJson(o bool) Option {
 	return func(opt *Options) {
 		opt.Log.OutJson = o
-	}
-}
-
-func WithLogNoColor(n bool) Option {
-	return func(opt *Options) {
-		opt.Log.NoColor = n
 	}
 }
 

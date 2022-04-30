@@ -8,9 +8,9 @@ import (
 
 func TestURL(t *testing.T) {
 	URL, _ := url.Parse("http://foo.com/static/ab.css")
-	t.Log(URL.Path, filepath.Ext(URL.Path), ignoreRequest(URL.Path))
+	t.Log(URL.Path, filepath.Ext(URL.Path), ignoreRequestWithPath(URL.Path))
 	URL, _ = url.Parse("http://foo.com/static/ab.js")
-	t.Log(URL.Path, filepath.Ext(URL.Path), ignoreRequest(URL.Path))
+	t.Log(URL.Path, filepath.Ext(URL.Path), ignoreRequestWithPath(URL.Path))
 	URL, _ = url.Parse("http://foo.com/static/ab.png")
-	t.Log(URL.Path, filepath.Ext(URL.Path), ignoreRequest(URL.Path))
+	t.Log(URL.Path, filepath.Ext(URL.Path), ignoreRequestWithPath(URL.Path))
 }

@@ -52,7 +52,6 @@ func MakeRequest(req *http.Request) Request {
 		Host:   req.Host,
 		URL:    req.URL.String(),
 	}
-	r2.Cookies = req.Cookies()
 	r2.Header = req.Header.Clone()
 	r2.Form = urlx.CloneUrlValues(req.Form)
 	r2.PostForm = urlx.CloneUrlValues(req.PostForm)
@@ -60,12 +59,19 @@ func MakeRequest(req *http.Request) Request {
 	return r2
 }
 
-func MakeResponse(resp *http.Response) Response {
+func MakeResponse(req Request, resp *http.Response) Response {
 	r2 := Response{
 		Status: resp.StatusCode,
 		Header: resp.Header.Clone(),
 		Body:   nil,
 	}
+	cookies := resp.Cookies()
+	for i := range cookies {
+		if cookies[i].Domain == "" {
+			cookies[i].Domain = resp.Request.Host
+		}
+	}
+	req.Cookies = cookies
 
 	if resp.Body != nil {
 		buf := bufferPool.Get().(*bytes.Buffer)
@@ -79,8 +85,10 @@ func MakeResponse(resp *http.Response) Response {
 		}()
 
 		if _, err := io.Copy(buf, resp.Body); err != nil {
-			logrus.Errorln("[httputil] copy resp.body ", err)
+			resp.Body.Close()
+			logrus.Errorln("[httputil] copy resp.body error:", err)
 		} else {
+			resp.Body.Close()
 			data := buf.Bytes()
 			r2.Body = data
 			resp.Body = io.NopCloser(bytes.NewReader(data))
@@ -213,7 +221,7 @@ var (
 	}
 )
 
-func ignoreRequest(path string) bool {
+func ignoreRequestWithPath(path string) bool {
 	return slicex.ContainsIn(exts,
 		filepath.Ext(path))
 }

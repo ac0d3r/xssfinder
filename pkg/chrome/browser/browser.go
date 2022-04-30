@@ -7,7 +7,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/chromedp/cdproto/page"
+	"github.com/chromedp/cdproto/browser"
 	"github.com/chromedp/chromedp"
 	"github.com/sirupsen/logrus"
 )
@@ -51,8 +51,7 @@ func NewBrowser(c Config) *Browser {
 		chromedp.WindowSize(1920, 1080),
 	)
 	if c.Proxy != "" { // 设置浏览器代理
-		_, err := url.Parse(c.Proxy)
-		if err == nil {
+		if _, err := url.Parse(c.Proxy); err == nil {
 			opts = append(opts, chromedp.ProxyServer(c.Proxy))
 		}
 	}
@@ -123,9 +122,7 @@ func (b *Browser) Close() {
 	// close main browser
 	b.cancelC()
 	b.cancelA()
-	if err := page.Close().Do(*b.ctx); err != nil {
-		logrus.Errorln("Browser.Close", err)
+	if err := browser.Close().Do(*b.ctx); err != nil {
+		logrus.Errorln("browser page close error:", err)
 	}
-
-	b.ctx, b.cancelC, b.cancelA = nil, nil, nil
 }

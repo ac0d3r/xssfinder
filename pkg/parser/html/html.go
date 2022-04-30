@@ -3,7 +3,7 @@ package html
 import (
 	"io"
 
-	"github.com/Buzz2d0/xssfinder/parser/javascript"
+	"github.com/Buzz2d0/xssfinder/pkg/parser/javascript"
 	"github.com/gokitx/pkgs/slicex"
 	"golang.org/x/net/html"
 )

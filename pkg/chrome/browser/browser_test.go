@@ -7,17 +7,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Buzz2d0/xssfinder/logger"
 	"github.com/chromedp/cdproto/browser"
 	"github.com/chromedp/chromedp"
 	"github.com/sirupsen/logrus"
 )
 
 func TestMain(m *testing.M) {
-	logger.Init("xssfinder-debug", logger.Config{
-		Level:   logrus.TraceLevel,
-		NoColor: true,
-	})
+	logrus.SetLevel(logrus.TraceLevel)
 	m.Run()
 }
 

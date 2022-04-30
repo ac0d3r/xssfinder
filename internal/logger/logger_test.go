@@ -7,7 +7,7 @@ import (
 )
 
 func TestLogger(t *testing.T) {
-	Init("xssfinder", Config{
+	Init(Config{
 		Level:   logrus.DebugLevel,
 		NoColor: true,
 	})

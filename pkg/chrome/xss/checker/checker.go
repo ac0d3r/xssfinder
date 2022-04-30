@@ -12,7 +12,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func CheckGetTypePoc(url, kerword string, res *bool, timeout time.Duration, before ...chromedp.Action) chromedp.Tasks {
+func GenTasks(url, kerword string, res *bool, timeout time.Duration, before ...chromedp.Action) chromedp.Tasks {
 	return chromedp.Tasks{
 		network.Enable(),
 		chromedp.Tasks(before),

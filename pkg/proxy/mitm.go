@@ -19,10 +19,14 @@ func init() {
 }
 
 type LogrusLogger struct {
+	verbose bool
 }
 
 func (l LogrusLogger) Printf(format string, v ...interface{}) {
-	logrus.Tracef(format, v...)
+	if l.verbose {
+		// TODO 先忽略此日志
+		// logrus.Tracef(format, v...)
+	}
 }
 
 type Config struct {
@@ -30,10 +34,12 @@ type Config struct {
 	Verbose     bool     // porxy 代理日志
 	TargetHosts []string // 指定目标主机，将忽略其他主机；默认为所有
 	ParentProxy string   // 请求的代理
+	CaHost      string
 }
 
 type MitmServer struct {
 	addr    string
+	cahost  string
 	reqs    sync.Map
 	goProxy *goproxy.ProxyHttpServer
 	srv     *http.Server
@@ -44,15 +50,18 @@ type MitmServer struct {
 func NewMitmServer(conf Config) *MitmServer {
 	proxy := goproxy.NewProxyHttpServer()
 	proxy.Verbose = conf.Verbose
-	proxy.Logger = LogrusLogger{}
+	proxy.Logger = LogrusLogger{verbose: conf.Verbose}
 
-	proxy.OnRequest().HandleConnect(goproxy.AlwaysMitm)
-	proxy.OnRequest(goproxy.DstHostIs("xssfinder.ca")).
+	if conf.CaHost == "" {
+		conf.CaHost = "xssfinder.ca"
+	}
+	proxy.OnRequest(goproxy.DstHostIs(conf.CaHost)).
 		DoFunc(DownloadCaHandlerFunc)
-
+	proxy.OnRequest().HandleConnect(goproxy.AlwaysMitm)
 	c := make(chan Request, 5e1)
 	mitm := &MitmServer{
 		addr:    conf.Addr,
+		cahost:  conf.CaHost,
 		goProxy: proxy,
 		C:       c,
 	}
@@ -86,7 +95,7 @@ func (m *MitmServer) SetParentProxy(parentProxy string) {
 
 func (m *MitmServer) OnRequest(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *http.Response) {
 	// ignore requests for static resources
-	if ignoreRequest(req.URL.Path) {
+	if ignoreRequestWithPath(req.URL.Path) {
 		return req, nil
 	}
 	m.reqs.Store(ctx.Session, MakeRequest(req))
@@ -106,7 +115,7 @@ func (m *MitmServer) MakeOnResponse(c chan Request) func(resp *http.Response, ct
 			if req, ok := m.reqs.LoadAndDelete(ctx.Session); ok {
 				if request, ok := req.(Request); ok {
 					logrus.Debugln("[mitm] received:", request.URL)
-					request.Response = MakeResponse(resp)
+					request.Response = MakeResponse(request, resp)
 					c <- request
 				}
 			}
@@ -124,6 +133,8 @@ func (m *MitmServer) ListenAndServe() error {
 		Handler: m.goProxy,
 	}
 	m.srv = serv
+	logrus.Infoln("[mitm] listen at: ", m.addr)
+	logrus.Infoln("[mitm] ca:  ", "http://"+m.cahost)
 	return serv.ListenAndServe()
 }
 
