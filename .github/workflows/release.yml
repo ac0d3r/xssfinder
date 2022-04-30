@@ -1,9 +1,9 @@
-name: 🎉 Build And Release
+name: Build And Release🎉
 
 on:
   push:
     tags:
-    - v*
+      - v*
 
 jobs:
   build:
@@ -12,23 +12,23 @@ jobs:
       CGO_ENABLED: 0
       BUILD_FLAGS: -trimpath -ldflags "-w -s" -o
     steps:
-      - name: "Check out code"
-          uses: actions/checkout@v2
-          with:
-            fetch-depth: 0
+      - name: Check out code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
 
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
           go-version: 1.18
-          
+
       - name: Make release dir
         run: mkdir release
-      
+
       - name: Install Package
         run: |
           sudo apt install -y zip
-        
+
       - name: Build linux release
         env:
           GOOS: linux
@@ -36,28 +36,28 @@ jobs:
           GOARCH=amd64 go build ${{ env.BUILD_FLAGS }} release/xssfinder_linux_amd64 ./cmd/xssfinder/xssfinder.go
           GOARCH=386   go build ${{ env.BUILD_FLAGS }} release/xssfinder_linux_386   ./cmd/xssfinder/xssfinder.go
           GOARCH=arm64 go build ${{ env.BUILD_FLAGS }} release/xssfinder_linux_arm64 ./cmd/xssfinder/xssfinder.go
-          
+
       - name: Build windows release
         env:
           GOOS: windows
         run: |
           GOARCH=amd64 go build ${{ env.BUILD_FLAGS }} release/xssfinder_windows_amd64.exe ./cmd/xssfinder/xssfinder.go
           GOARCH=386   go build ${{ env.BUILD_FLAGS }} release/xssfinder_windows_386.exe   ./cmd/xssfinder/xssfinder.go
-          
+
       - name: Build darwin release
         env:
           GOOS: darwin
         run: |
           GOARCH=amd64 go build ${{ env.BUILD_FLAGS }} release/xssfinder_darwin_amd64 ./cmd/xssfinder/xssfinder.go
           GOARCH=arm64 go build ${{ env.BUILD_FLAGS }} release/xssfinder_darwin_arm64 ./cmd/xssfinder/xssfinder.go
-      
+
       - name: Zip Release
         run: |
           cd release
           find . -name 'xssfinder_*' -type f -exec zip {}.zip {} \; -exec rm {} \;
           find . -name 'xssfinder_*.zip' -type f -exec shasum -a 256 {} \; > sha256.txt
           ls -alh
-      
+
       - name: Upload release
         uses: softprops/action-gh-release@v1
         with:
