@@ -78,6 +78,9 @@ dingbot:
 ![](./docs/notify-demo.png)
 <img src="./docs/dingbot-demo.png" alt="Hyuga" width="150"/>
 
+## Bypass headless detect
+
+![](./docs/bypass-headless-detect.png)
 ## 规划
 
 - [x] 优化 cmd parse

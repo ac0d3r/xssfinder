@@ -16,6 +16,5 @@
 .env
 .vscode/
 .DS_Store
-BypassHeadlessDetect.png
 chrome/xss/dom/intercepted_test.go
 notifier.yaml
