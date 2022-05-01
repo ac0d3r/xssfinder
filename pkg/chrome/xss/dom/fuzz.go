@@ -10,11 +10,11 @@ import (
 
 type VulPoint struct {
 	Url    string     `json:"url"`
-	Source TrackChian `json:"source"`
-	Sink   TrackChian `json:"sink"`
+	Source TrackChain `json:"source"`
+	Sink   TrackChain `json:"sink"`
 }
 
-type TrackChian struct {
+type TrackChain struct {
 	Label      string `json:"label"`
 	Stacktrace []struct {
 		Url    string `json:"url"`
