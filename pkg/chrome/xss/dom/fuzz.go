@@ -10,11 +10,11 @@ import (
 
 type VulPoint struct {
 	Url    string     `json:"url"`
-	Source TrackChian `json:"source"`
-	Sink   TrackChian `json:"sink"`
+	Source TrackChain `json:"source"`
+	Sink   TrackChain `json:"sink"`
 }
 
-type TrackChian struct {
+type TrackChain struct {
 	Label      string `json:"label"`
 	Stacktrace []struct {
 		Url    string `json:"url"`
@@ -32,6 +32,7 @@ var (
 		`"-alert({{RAND}})-"`,
 		`-alert({{RAND}})-`,
 		`'"><img src=x onerror=alert({{RAND}})>`,
+		`alert({{RAND}})`,
 	}
 )
 
@@ -45,6 +46,7 @@ type FuzzUrl struct {
 	Rand string `json:"rand"`
 }
 
+// GenPocUrls generates fuzz urls with payload
 func GenPocUrls(point VulPoint) ([]FuzzUrl, error) {
 	payloads := make([]FuzzUrl, 0)
 
@@ -58,9 +60,19 @@ func GenPocUrls(point VulPoint) ([]FuzzUrl, error) {
 		for k := range oriQuery {
 			for _, pre := range fuzzPrefixes {
 				pre, rand := genRand(pre)
-				q2 := urlx.CloneUrlValues(oriQuery)
-				q2.Set(k, pre+q2.Get(k))
-				u.RawQuery = q2.Encode()
+				// append query
+				aq := urlx.CloneUrlValues(oriQuery)
+				aq.Set(k, pre+aq.Get(k))
+				u.RawQuery = aq.Encode()
+				payloads = append(payloads, FuzzUrl{
+					Url:  u.String(),
+					Rand: rand,
+				})
+
+				// replace query
+				rq := urlx.CloneUrlValues(oriQuery)
+				rq.Set(k, rq.Get(k)+pre)
+				u.RawQuery = rq.Encode()
 				payloads = append(payloads, FuzzUrl{
 					Url:  u.String(),
 					Rand: rand,
@@ -68,9 +80,19 @@ func GenPocUrls(point VulPoint) ([]FuzzUrl, error) {
 			}
 			for _, suf := range fuzzSuffixes {
 				suf, rand := genRand(suf)
-				q2 := urlx.CloneUrlValues(oriQuery)
-				q2.Set(k, q2.Get(k)+suf)
-				u.RawQuery = q2.Encode()
+				// append query
+				aq := urlx.CloneUrlValues(oriQuery)
+				aq.Set(k, aq.Get(k)+suf)
+				u.RawQuery = aq.Encode()
+				payloads = append(payloads, FuzzUrl{
+					Url:  u.String(),
+					Rand: rand,
+				})
+
+				// replace query
+				rq := urlx.CloneUrlValues(oriQuery)
+				rq.Set(k, suf)
+				u.RawQuery = rq.Encode()
 				payloads = append(payloads, FuzzUrl{
 					Url:  u.String(),
 					Rand: rand,
@@ -85,7 +107,14 @@ func GenPocUrls(point VulPoint) ([]FuzzUrl, error) {
 	if hash != "" {
 		for _, pre := range fuzzPrefixes {
 			pre, rand := genRand(pre)
+			// append fragment
 			u.Fragment = pre + hash
+			payloads = append(payloads, FuzzUrl{
+				Url:  u.String(),
+				Rand: rand,
+			})
+			// replace fragment
+			u.Fragment = pre
 			payloads = append(payloads, FuzzUrl{
 				Url:  u.String(),
 				Rand: rand,
@@ -93,7 +122,14 @@ func GenPocUrls(point VulPoint) ([]FuzzUrl, error) {
 		}
 		for _, suf := range fuzzSuffixes {
 			suf, rand := genRand(suf)
+			// append fragment
 			u.Fragment = hash + suf
+			payloads = append(payloads, FuzzUrl{
+				Url:  u.String(),
+				Rand: rand,
+			})
+			// replace fragment
+			u.Fragment = suf
 			payloads = append(payloads, FuzzUrl{
 				Url:  u.String(),
 				Rand: rand,
