@@ -9,7 +9,7 @@ require (
 	github.com/gokitx/pkgs v0.0.0-20220427050926-6a5988096940
 	github.com/sirupsen/logrus v1.8.1
 	github.com/tdewolff/parse/v2 v2.5.29
-	github.com/urfave/cli/v2 v2.5.1
+	github.com/urfave/cli/v2 v2.6.0
 	golang.org/x/net v0.0.0-20220412020605-290c469a71a5
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	gopkg.in/yaml.v2 v2.4.0
