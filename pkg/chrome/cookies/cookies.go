@@ -2,14 +2,14 @@ package cookies
 
 import (
 	"context"
-	"net/http"
 
+	"github.com/Buzz2d0/xssfinder/pkg/httpdump"
 	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/chromedp"
 )
 
-func SetWithHttpCookie(c []*http.Cookie) chromedp.Action {
+func SetWithHttpCookie(c []httpdump.Cookie) chromedp.Action {
 	cookies := make([]*network.CookieParam, len(c))
 	for i := range c {
 

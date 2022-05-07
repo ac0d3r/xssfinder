@@ -11,6 +11,7 @@ import (
 const (
 	inputTag  = "input"
 	scriptTag = "script"
+	styleTag  = "style"
 )
 
 func GetParams(r io.Reader) ([]string, error) {
@@ -33,7 +34,8 @@ func GetParams(r io.Reader) ([]string, error) {
 					}
 				}
 			case scriptTag:
-				if n.FirstChild != nil {
+				if n.FirstChild != nil &&
+					n.FirstChild.Type == html.TextNode {
 					if vars, err := javascript.GetAllVariable(n.FirstChild.Data); err == nil {
 						params = append(params, vars...)
 					}

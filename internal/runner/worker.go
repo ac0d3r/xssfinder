@@ -12,8 +12,8 @@ import (
 	"github.com/Buzz2d0/xssfinder/pkg/chrome/cookies"
 	"github.com/Buzz2d0/xssfinder/pkg/chrome/xss/checker"
 	"github.com/Buzz2d0/xssfinder/pkg/chrome/xss/dom"
+	"github.com/Buzz2d0/xssfinder/pkg/httpdump"
 	"github.com/Buzz2d0/xssfinder/pkg/notify"
-	"github.com/Buzz2d0/xssfinder/pkg/proxy"
 	"github.com/chromedp/chromedp"
 	"github.com/gokitx/pkgs/limiter"
 	"github.com/sirupsen/logrus"
@@ -38,7 +38,7 @@ func NewWorker(limitNum int64,
 	}
 }
 
-func (w *Worker) Start(ctx context.Context, C <-chan proxy.Request) error {
+func (w *Worker) Start(ctx context.Context, C <-chan httpdump.Request) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -54,7 +54,7 @@ func (w *Worker) Start(ctx context.Context, C <-chan proxy.Request) error {
 		case task := <-C:
 			w.Allow()
 			logrus.Infoln("[worker] received task:", task.URL, task.Response.Status)
-			go func(ctx context.Context, req proxy.Request) {
+			go func(ctx context.Context, req httpdump.Request) {
 				defer w.Done()
 				if err := w.scan(ctx, req); err != nil {
 					logrus.Errorln("[worker] scan task error:", err)
@@ -64,7 +64,7 @@ func (w *Worker) Start(ctx context.Context, C <-chan proxy.Request) error {
 	}
 }
 
-func (w *Worker) scan(ctx context.Context, req proxy.Request) error {
+func (w *Worker) scan(ctx context.Context, req httpdump.Request) error {
 	var preTasks chromedp.Tasks
 	preTasks = w.preActions[:]
 	if len(req.Cookies) != 0 {
@@ -114,6 +114,7 @@ func (w *Worker) checkDomPoc(ctx context.Context, points []dom.VulPoint, preActi
 }
 
 func (w *Worker) reportDom(url string, point dom.VulPoint) {
+	// TODO report
 	p, _ := json.MarshalIndent(point, "", "  ")
 	logrus.Infof("[report] url: %s\n\ttype: dom-based\n\tdesc: %s\n", url, string(p))
 	if w.notifier != nil {

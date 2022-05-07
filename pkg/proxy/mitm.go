@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/Buzz2d0/xssfinder/pkg/httpdump"
 	"github.com/elazarl/goproxy"
 	"github.com/gokitx/pkgs/slicex"
 	"github.com/sirupsen/logrus"
@@ -44,7 +45,7 @@ type MitmServer struct {
 	goProxy *goproxy.ProxyHttpServer
 	srv     *http.Server
 
-	C <-chan Request
+	C <-chan httpdump.Request
 }
 
 func NewMitmServer(conf Config) *MitmServer {
@@ -58,7 +59,7 @@ func NewMitmServer(conf Config) *MitmServer {
 	proxy.OnRequest(goproxy.DstHostIs(conf.CaHost)).
 		DoFunc(DownloadCaHandlerFunc)
 	proxy.OnRequest().HandleConnect(goproxy.AlwaysMitm)
-	c := make(chan Request, 5e1)
+	c := make(chan httpdump.Request, 5e1)
 	mitm := &MitmServer{
 		addr:    conf.Addr,
 		cahost:  conf.CaHost,
@@ -98,11 +99,11 @@ func (m *MitmServer) OnRequest(req *http.Request, ctx *goproxy.ProxyCtx) (*http.
 	if ignoreRequestWithPath(req.URL.Path) {
 		return req, nil
 	}
-	m.reqs.Store(ctx.Session, MakeRequest(req))
+	m.reqs.Store(ctx.Session, httpdump.MakeRequest(req))
 	return req, nil
 }
 
-func (m *MitmServer) MakeOnResponse(c chan Request) func(resp *http.Response, ctx *goproxy.ProxyCtx) *http.Response {
+func (m *MitmServer) MakeOnResponse(c chan httpdump.Request) func(resp *http.Response, ctx *goproxy.ProxyCtx) *http.Response {
 	return func(resp *http.Response, ctx *goproxy.ProxyCtx) *http.Response {
 		if resp == nil {
 			m.reqs.Delete(ctx.Session)
@@ -113,9 +114,9 @@ func (m *MitmServer) MakeOnResponse(c chan Request) func(resp *http.Response, ct
 		if strings.Contains(contentType, "text/html") ||
 			strings.Contains(contentType, "text/htm") {
 			if req, ok := m.reqs.LoadAndDelete(ctx.Session); ok {
-				if request, ok := req.(Request); ok {
+				if request, ok := req.(httpdump.Request); ok {
 					logrus.Debugln("[mitm] received:", request.URL)
-					request.Response = MakeResponse(request, resp)
+					request.Response = httpdump.MakeResponse(request, resp)
 					c <- request
 				}
 			}

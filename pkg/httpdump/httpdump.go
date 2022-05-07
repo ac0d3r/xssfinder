@@ -1,4 +1,4 @@
-package proxy
+package httpdump
 
 import (
 	"bytes"
@@ -7,10 +7,9 @@ import (
 	"net/http"
 	"net/textproto"
 	"net/url"
-	"path/filepath"
 	"sync"
+	"time"
 
-	"github.com/gokitx/pkgs/slicex"
 	"github.com/gokitx/pkgs/urlx"
 	"github.com/sirupsen/logrus"
 )
@@ -24,15 +23,23 @@ var (
 )
 
 type Request struct {
-	Method        string
-	URL           string
-	Header        http.Header
-	Host          string
-	Form          url.Values
-	PostForm      url.Values
-	MultipartForm *multipart.Form
-	Cookies       []*http.Cookie
-	Response      Response
+	Method   string
+	URL      string
+	Header   http.Header
+	Host     string
+	PostForm url.Values
+	Cookies  []Cookie
+	Response Response
+}
+
+type Cookie struct {
+	Name     string
+	Value    string
+	Domain   string
+	Path     string
+	HttpOnly bool
+	Secure   bool
+	Expires  time.Time
 }
 
 type Response struct {
@@ -53,9 +60,8 @@ func MakeRequest(req *http.Request) Request {
 		URL:    req.URL.String(),
 	}
 	r2.Header = req.Header.Clone()
-	r2.Form = urlx.CloneUrlValues(req.Form)
+	req.ParseForm()
 	r2.PostForm = urlx.CloneUrlValues(req.PostForm)
-	r2.MultipartForm = cloneMultipartForm(req.MultipartForm)
 	return r2
 }
 
@@ -65,13 +71,14 @@ func MakeResponse(req Request, resp *http.Response) Response {
 		Header: resp.Header.Clone(),
 		Body:   nil,
 	}
+	// reponse setcookies
 	cookies := resp.Cookies()
 	for i := range cookies {
 		if cookies[i].Domain == "" {
 			cookies[i].Domain = resp.Request.Host
 		}
 	}
-	req.Cookies = cookies
+	req.Cookies = append(req.Cookies, dumpCookies(cookies)...)
 
 	if resp.Body != nil {
 		buf := bufferPool.Get().(*bytes.Buffer)
@@ -141,85 +148,18 @@ func cloneMultipartFileHeader(fh *multipart.FileHeader) *multipart.FileHeader {
 	return fh2
 }
 
-var (
-	// https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
-	exts = []string{
-		".aac",
-		".abw",
-		".arc",
-		".avif",
-		".avi",
-		".azw",
-		".bin",
-		".bmp",
-		".bz",
-		".bz2",
-		".cda",
-		".csh",
-		".css",
-		".csv",
-		".doc",
-		".docx",
-		".eot",
-		".epub",
-		".gz",
-		".gif",
-		".ico",
-		".ics",
-		".jpeg",
-		".jpg",
-		".js",
-		".json",
-		".jsonld",
-		".mid",
-		".midi",
-		".mjs",
-		".mp3",
-		".mp4",
-		".mpeg",
-		".mpkg",
-		".odp",
-		".ods",
-		".odt",
-		".oga",
-		".ogv",
-		".ogx",
-		".opus",
-		".otf",
-		".png",
-		".pdf",
-		".ppt",
-		".pptx",
-		".rar",
-		".rtf",
-		".sh",
-		".svg",
-		".swf",
-		".tar",
-		".tif ",
-		".tiff",
-		".ts",
-		".ttf",
-		".txt",
-		".vsd",
-		".wav",
-		".weba",
-		".webm",
-		".webp",
-		".woff",
-		".woff2",
-		".xls",
-		".xlsx",
-		".xml",
-		".xul",
-		".zip",
-		".3gp",
-		".3g2",
-		".7z",
+func dumpCookies(c []*http.Cookie) []Cookie {
+	r := make([]Cookie, len(c))
+	for i := range c {
+		r[i] = Cookie{
+			Name:     c[i].Name,
+			Value:    c[i].Value,
+			Domain:   c[i].Domain,
+			Path:     c[i].Path,
+			HttpOnly: c[i].HttpOnly,
+			Secure:   c[i].Secure,
+			Expires:  c[i].Expires,
+		}
 	}
-)
-
-func ignoreRequestWithPath(path string) bool {
-	return slicex.ContainsIn(exts,
-		filepath.Ext(path))
+	return r
 }
