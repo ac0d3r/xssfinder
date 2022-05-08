@@ -5,7 +5,8 @@ import (
 	"strings"
 
 	"github.com/gokitx/pkgs/random"
-	"github.com/gokitx/pkgs/urlx"
+
+	"github.com/Buzz2d0/xssfinder/pkg/mix"
 )
 
 type VulPoint struct {
@@ -54,87 +55,27 @@ func GenPocUrls(point VulPoint) ([]FuzzUrl, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	oriQuery := u.Query()
-	if len(oriQuery) != 0 {
-		for k := range oriQuery {
-			for _, pre := range fuzzPrefixes {
-				pre, rand := genRand(pre)
-				// append query
-				aq := urlx.CloneUrlValues(oriQuery)
-				aq.Set(k, pre+aq.Get(k))
-				u.RawQuery = aq.Encode()
-				payloads = append(payloads, FuzzUrl{
-					Url:  u.String(),
-					Rand: rand,
-				})
-
-				// replace query
-				rq := urlx.CloneUrlValues(oriQuery)
-				rq.Set(k, rq.Get(k)+pre)
-				u.RawQuery = rq.Encode()
-				payloads = append(payloads, FuzzUrl{
-					Url:  u.String(),
-					Rand: rand,
-				})
-			}
-			for _, suf := range fuzzSuffixes {
-				suf, rand := genRand(suf)
-				// append query
-				aq := urlx.CloneUrlValues(oriQuery)
-				aq.Set(k, aq.Get(k)+suf)
-				u.RawQuery = aq.Encode()
-				payloads = append(payloads, FuzzUrl{
-					Url:  u.String(),
-					Rand: rand,
-				})
-
-				// replace query
-				rq := urlx.CloneUrlValues(oriQuery)
-				rq.Set(k, suf)
-				u.RawQuery = rq.Encode()
-				payloads = append(payloads, FuzzUrl{
-					Url:  u.String(),
-					Rand: rand,
-				})
-			}
-		}
-		// 还原query
-		u.RawQuery = oriQuery.Encode()
+	var (
+		preRand string
+		sufRand string
+	)
+	for index, pre := range fuzzPrefixes {
+		pre, preRand = genRand(pre)
+		fuzzPrefixes[index] = pre
 	}
 
-	hash := u.Fragment
-	if hash != "" {
-		for _, pre := range fuzzPrefixes {
-			pre, rand := genRand(pre)
-			// append fragment
-			u.Fragment = pre + hash
-			payloads = append(payloads, FuzzUrl{
-				Url:  u.String(),
-				Rand: rand,
-			})
-			// replace fragment
-			u.Fragment = pre
-			payloads = append(payloads, FuzzUrl{
-				Url:  u.String(),
-				Rand: rand,
-			})
-		}
-		for _, suf := range fuzzSuffixes {
-			suf, rand := genRand(suf)
-			// append fragment
-			u.Fragment = hash + suf
-			payloads = append(payloads, FuzzUrl{
-				Url:  u.String(),
-				Rand: rand,
-			})
-			// replace fragment
-			u.Fragment = suf
-			payloads = append(payloads, FuzzUrl{
-				Url:  u.String(),
-				Rand: rand,
-			})
-		}
+	for index, suf := range fuzzSuffixes {
+		suf, sufRand = genRand(suf)
+		fuzzSuffixes[index] = suf
+	}
+	prefixURLs := mix.Payloads(*u, fuzzPrefixes, []mix.Rule{mix.RuleAppendPrefix, mix.RuleReplace}, mix.DefaultScopes)
+	for _, u := range prefixURLs {
+		payloads = append(payloads, FuzzUrl{Url: u.String(), Rand: preRand})
+	}
+
+	suffixURLs := mix.Payloads(*u, fuzzSuffixes, []mix.Rule{mix.RuleAppendSuffix, mix.RuleReplace}, mix.DefaultScopes)
+	for _, u := range suffixURLs {
+		payloads = append(payloads, FuzzUrl{Url: u.String(), Rand: sufRand})
 	}
 
 	// TODO referrer
