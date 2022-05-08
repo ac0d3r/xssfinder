@@ -32,8 +32,8 @@ func mixQuery(u url.URL, payloads []string, rules []Rule) []url.URL {
 	index := 0
 	for _, payload := range payloads {
 		for key := range baseQuery {
-			query := CloneValues(baseQuery)
 			for _, rule := range rules {
+				query := CloneValues(baseQuery)
 				newQuery := generateQueryWithRule(query, key, payload, rule)
 				u.RawQuery = newQuery.Encode()
 				urls[index] = u
