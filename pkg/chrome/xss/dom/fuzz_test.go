@@ -28,6 +28,9 @@ func TestGenPocUrls(t *testing.T) {
 		// Url: "http://localhost:8080/dom_test.html#12323",
 	})
 	logurls(urls)
+
+	t.Log(fuzzPrefixes)
+	t.Log(fuzzSuffixes)
 }
 
 func logurls(urls []FuzzUrl) {

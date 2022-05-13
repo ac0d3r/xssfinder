@@ -37,6 +37,17 @@ func TestMixPayloads(t *testing.T) {
 	}
 }
 
+func TestPathMixPayloads(t *testing.T) {
+	t.Parallel()
+	var urls []url.URL
+	for _, testCase := range urlTestCases {
+		urls = Payloads(testCase.urlOBJ, payloads, DefaultMixRules, []Scope{ScopePath})
+	}
+	for _, v := range urls {
+		fmt.Println(v.String())
+	}
+}
+
 func TestMixQuery(t *testing.T) {
 	t.Parallel()
 	var urls []url.URL

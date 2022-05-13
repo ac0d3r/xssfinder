@@ -55,27 +55,17 @@ func GenPocUrls(point VulPoint) ([]FuzzUrl, error) {
 	if err != nil {
 		return nil, err
 	}
-	var (
-		preRand string
-		sufRand string
-	)
-	for index, pre := range fuzzPrefixes {
-		pre, preRand = genRand(pre)
-		fuzzPrefixes[index] = pre
-	}
 
-	for index, suf := range fuzzSuffixes {
-		suf, sufRand = genRand(suf)
-		fuzzSuffixes[index] = suf
-	}
 	prefixURLs := mix.Payloads(*u, fuzzPrefixes, []mix.Rule{mix.RuleAppendPrefix, mix.RuleReplace}, mix.DefaultScopes)
 	for _, u := range prefixURLs {
-		payloads = append(payloads, FuzzUrl{Url: u.String(), Rand: preRand})
+		furl, rand := genRand(u.String())
+		payloads = append(payloads, FuzzUrl{Url: furl, Rand: rand})
 	}
 
 	suffixURLs := mix.Payloads(*u, fuzzSuffixes, []mix.Rule{mix.RuleAppendSuffix, mix.RuleReplace}, mix.DefaultScopes)
 	for _, u := range suffixURLs {
-		payloads = append(payloads, FuzzUrl{Url: u.String(), Rand: sufRand})
+		furl, rand := genRand(u.String())
+		payloads = append(payloads, FuzzUrl{Url: furl, Rand: rand})
 	}
 
 	// TODO referrer

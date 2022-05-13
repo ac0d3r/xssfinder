@@ -5,6 +5,8 @@ import (
 	"net/url"
 	"path"
 	"strings"
+
+	"github.com/gokitx/pkgs/urlx"
 )
 
 func Payloads(u url.URL, payloads []string, rules []Rule, scopes []Scope) []url.URL {
@@ -28,14 +30,15 @@ func mixQuery(u url.URL, payloads []string, rules []Rule) []url.URL {
 	}
 	baseQuery := u.Query()
 	urls := make([]url.URL, len(payloads)*len(rules)*len(baseQuery))
-	// var urls []url.URL
-	index := 0
+
+	var index int
 	for _, payload := range payloads {
 		for key := range baseQuery {
 			for _, rule := range rules {
-				query := CloneValues(baseQuery)
-				newQuery := generateQueryWithRule(query, key, payload, rule)
-				u.RawQuery = newQuery.Encode()
+				u.RawQuery = generateQueryWithRule(
+					urlx.CloneUrlValues(baseQuery),
+					key, payload, rule,
+				).Encode()
 				urls[index] = u
 				index++
 			}
@@ -71,9 +74,10 @@ func mixPath(u url.URL, payloads []string, rules []Rule) []url.URL {
 				if paths[index] == "" {
 					continue
 				}
-				paths[index] = generateStrWithRule(paths[index], payload, rule)
-				newPath := CloneSlices(paths)
-				u.Path = path.Join(newPath...)
+				brefore := paths[index]
+				paths[index] = generateStrWithRule(brefore, payload, rule)
+				u.Path = path.Join(paths...)
+				paths[index] = brefore
 				urls = append(urls, u)
 			}
 		}
@@ -143,32 +147,3 @@ const (
 )
 
 var DefaultScopes = []Scope{ScopeQuery, ScopeFragment}
-
-func CloneValues(values url.Values) url.Values {
-	if values == nil {
-		return nil
-	}
-	// find total number of values.
-	nv := 0
-	for _, vv := range values {
-		nv += len(vv)
-	}
-	// shared backing array for headers' values
-	sv := make([]string, nv)
-	v2 := make(url.Values, len(values))
-	for k, vv := range values {
-		n := copy(sv, vv)
-		v2[k] = sv[:n:n]
-		sv = sv[n:]
-	}
-	return v2
-}
-
-// CloneSlices returns a copy of the given slice.
-// based on golang 1.18+ generics
-func CloneSlices[T any](s []T) []T {
-	if s == nil {
-		return nil
-	}
-	return append([]T{}, s...)
-}
