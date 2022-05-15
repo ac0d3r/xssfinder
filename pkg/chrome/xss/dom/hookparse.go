@@ -66,11 +66,17 @@ func convExpr(node js.IExpr) js.IExpr {
 				},
 			}
 		case js.EqToken: // =
-			if _, ok := n.X.(*js.DotExpr); ok {
+			if obj, ok := n.X.(*js.DotExpr); ok {
 				return &js.CallExpr{
 					X: &js.Var{Data: []byte("__xssfinder_put")},
 					Args: js.Args{
-						List: []js.Arg{{Value: n.X}, {Value: convExpr(n.Y)}},
+						List: []js.Arg{
+							{Value: obj.X},
+							{Value: &js.LiteralExpr{
+								TokenType: js.StringToken,
+								Data:      []byte(fmt.Sprintf(`"%s"`, obj.Y.JS())),
+							}},
+							{Value: convExpr(n.Y)}},
 					},
 				}
 			} else {
