@@ -569,8 +569,68 @@ function __xssfinder_get_stacktrace() {
         return _oldpostMessage.apply(this, arguments);
     };
 
+    ///////////////////////////////////////////////
+    // window.localStorage
+    // https://developer.mozilla.org/zh-CN/docs/Web/API/Window/localStorage
+    ///////////////////////////////////////////////
+    const _localStorage_getItem = window.localStorage.getItem;
+    window.localStorage.getItem = function (keyname) {
+        let sources = [];
+        if (__is_xssfinder_string(keyname)) {
+            keyname.sources.forEach(e => sources.push(e));
+        }
+        sources.push(__xssfinder_set_track_chian('window.localStorage.getItem("' + keyname + '")'));
+
+        let val = _localStorage_getItem.apply(this, [keyname.toString()]);
+        return parseObject(val, sources)
+    };
+    ///////////////////////////////////////////////
+    // window.sessionStorage
+    // https://developer.mozilla.org/zh-CN/docs/Web/API/Window/sessionStorage
+    ///////////////////////////////////////////////
+    const _sessionStorage_getItem = window.sessionStorage.getItem;
+    window.sessionStorage.getItem = function (keyname) {
+        let sources = [];
+        if (__is_xssfinder_string(keyname)) {
+            keyname.sources.forEach(e => sources.push(e));
+        }
+        sources.push(__xssfinder_set_track_chian('window.sessionStorage.getItem("' + keyname + '")'));
+
+        let val = _sessionStorage_getItem.apply(this, [keyname.toString()]);
+        return parseObject(val, sources)
+    };
 })();
 
+/*********************************************/
+// window.Storage
+/*********************************************/
+
+function parseObject(val, sources) {
+    switch (typeof val) {
+        case 'string':
+            return new __xssfinder_String(val.toString(), { sources: sources });
+        case 'number':
+            // TODO custom number
+            val.____xssfinder_String_flag = true;
+            val['sources'] = [];
+            sources.forEach(e => val['sources'].push(e));
+            return val
+        case 'boolean':
+            val.____xssfinder_String_flag = true;
+            val['sources'] = [];
+            sources.forEach(e => val['sources'].push(e));
+            return val
+        case 'object':
+            for (const key in val) {
+                val[key] = parseObject(val, sources);
+            }
+            return val;
+        case 'undefined':
+            return val;
+        case 'symbol':
+            return val;
+    }
+}
 
 /*********************************************/
 // sinks
@@ -718,6 +778,14 @@ function __xssfinder_get(object, key) {
                     sources: [__xssfinder_set_track_chian('window.' + key)],
                 });
         }
+    } else if (object === window.localStorage) {
+        // window.localStorage - https://developer.mozilla.org/zh-CN/docs/Web/API/Window/localStorage
+        let sources = [__xssfinder_set_track_chian('window.localStorage["' + key + '"]')]
+        return parseObject(object[key], sources);
+    } else if (object === window.sessionStorage) {
+        // window.sessionStorage - https://developer.mozilla.org/zh-CN/docs/Web/API/Window/sessionStorage
+        let sources = [__xssfinder_set_track_chian('window.sessionStorage["' + key + '"]')]
+        return parseObject(object[key], sources);
     }
     return object[key];
 }
@@ -733,7 +801,7 @@ function __xssfinder_put(object, key, value) {
     }
 
     // window.status - https://developer.mozilla.org/en-US/docs/Web/API/Window/status
-    if (object === window && key === 'status' && __is_xssfinder_string_script(value)) {
+    if (object === window && key === 'status' && __is_xssfinder_string(value)) {
         object['__xssfinder_status'] = value
         object['status'] = "__xssfinder" + value.toString()
         return;
