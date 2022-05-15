@@ -582,12 +582,12 @@ function __xssfinder_get_stacktrace() {
     // Range.prototype
     ///////////////////////////////////////////////
 
-    const rangeCreateContextualFragment = Range.prototype.createContextualFragment;
+    const _rangeCreateContextualFragment = Range.prototype.createContextualFragment;
     Range.prototype.createContextualFragment = function (fragment) {
         if (__is_xssfinder_string_html(fragment)) {
             __xssfinder_push_dmo_vul(fragment.sources, 'Range.prototype.createContextualFragment()');
         }
-        return rangeCreateContextualFragment.apply(this, arguments);
+        return _rangeCreateContextualFragment.apply(this, arguments);
     };
 
     ///////////////////////////////////////////////
@@ -623,7 +623,11 @@ function __xssfinder_get_stacktrace() {
         if (__is_xssfinder_string_script(x)) {
             __xssfinder_push_dmo_vul(x.sources, 'eval()');
             // eval requires toString()
-            return _eval.apply(this, [x.toString()]);
+            try {
+                return _eval.apply(this, [x.toString()]);
+            } finally {
+                return undefined;
+            }
         }
         return _eval.apply(this, arguments);
     };
@@ -687,15 +691,32 @@ function __xssfinder_get(object, key) {
             case 'documentURI':
             case 'baseURI':
             case 'URL':
+            case 'cookie':
                 return new __xssfinder_String(object[key], {
                     sources: [__xssfinder_set_track_chian('document.' + key)],
                 });
-            case 'referrer':
-                if (object[key]) {
-                    return new __xssfinder_String(object[key], {
-                        sources: [__xssfinder_set_track_chian('document.referrer')],
-                    });
+            case 'referrer': // referrer - https://developer.mozilla.org/zh-CN/docs/Web/API/Document/referrer
+                let referrer = object[key];
+                if (referrer === '') {
+                    referrer = 'https://zznq.imipy.com';
                 }
+                return new __xssfinder_String(referrer, {
+                    sources: [__xssfinder_set_track_chian('document.' + key)],
+                });
+        }
+    } else if (object === window) {
+        switch (key) {
+            case 'status': // window.status - https://developer.mozilla.org/en-US/docs/Web/API/Window/status
+                if (window.status !== '' && window.status.startsWith("__xssfinder")) {
+                    let v = window['__xssfinder_status'];
+                    v.sources.push(__xssfinder_set_track_chian('window.status'))
+                    return v
+                }
+                return window.status
+            case 'name':
+                return new __xssfinder_String(object[key], {
+                    sources: [__xssfinder_set_track_chian('window.' + key)],
+                });
         }
     }
     return object[key];
@@ -708,6 +729,13 @@ function __xssfinder_put(object, key, value) {
         return;
     } else if (object === window.location && key === 'href' && __is_xssfinder_string_script(value) && value.toString() !== object[key]) {
         // kill navigation
+        return;
+    }
+
+    // window.status - https://developer.mozilla.org/en-US/docs/Web/API/Window/status
+    if (object === window && key === 'status' && __is_xssfinder_string_script(value)) {
+        object['__xssfinder_status'] = value
+        object['status'] = "__xssfinder" + value.toString()
         return;
     }
 
