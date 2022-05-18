@@ -80,8 +80,12 @@ func (w *Worker) scan(ctx context.Context, req httpdump.Request) error {
 			return err
 		}
 		if len(vuls) != 0 {
-			logrus.Debugln("[worker] dom-based scan vuls:", vuls)
-			w.checkDomPoc(ctx, vuls, preTasks)
+			logrus.Info("[worker] dom-based scan vuls:")
+			for _, vulPoint := range vuls {
+				logrus.Infof("\t url: %s source: %s sink: %s \n", vulPoint.Url, vulPoint.Source.Label, vulPoint.Sink.Label)
+			}
+			// TODO 根据 source 构造 payload
+			// w.checkDomPoc(ctx, vuls, preTasks)
 		}
 	}
 	return nil
