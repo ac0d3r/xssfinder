@@ -15,10 +15,10 @@ func TestMain(m *testing.M) {
 }
 
 func TestDom(t *testing.T) {
-	url := "http://localhost:8080/dom_test.html#123232"
+	url := "https://public-firing-range.appspot.com/dom/toxicdom/localStorage/function/eval"
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
-		chromedp.Flag("headless", true),
-		// chromedp.ProxyServer("http://127.0.0.1:7890"),
+		chromedp.Flag("headless", false),
+		chromedp.ProxyServer("http://127.0.0.1:7890"),
 	)
 
 	var (
@@ -39,7 +39,7 @@ func TestDom(t *testing.T) {
 	}()
 
 	vuls := make([]VulPoint, 0)
-	if err := chromedp.Run(ctx, GenTasks(url, &vuls, time.Second*8)); err != nil {
+	if err := chromedp.Run(ctx, GenTasks(url, &vuls, time.Minute*1)); err != nil {
 		t.Log(err)
 	}
 

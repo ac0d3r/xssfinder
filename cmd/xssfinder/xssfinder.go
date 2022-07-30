@@ -6,7 +6,7 @@ import (
 	"github.com/Buzz2d0/xssfinder/internal/app"
 )
 
-const version = "v0.1.0"
+const version = "v0.1.2"
 
 func main() {
 	a := app.New(version)

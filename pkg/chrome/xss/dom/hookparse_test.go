@@ -41,6 +41,17 @@ const sum = new Function('a', 'b', 'return a + b');
 	t.Log(HookParse(code))
 }
 
+func TestExpression(t *testing.T) {
+	code := `// document.cookie = '1123';
+	var payload = location.hash.substr(1);
+	window.status = payload;
+	var retrieved_payload = window.status;
+	eval(retrieved_payload);
+	`
+
+	t.Log(HookParse(code))
+}
+
 func TestJsParser(t *testing.T) {
 	code := `
 	// a=={"a":"1.2", b:2.2};
